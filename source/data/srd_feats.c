@@ -1,5 +1,6 @@
 #include "srd_feats.h"
 #include "../models/character.h"
+#include <stddef.h>
 
 // ============================================================================
 // SRD FEATS (D&D 5e System Reference Document)
