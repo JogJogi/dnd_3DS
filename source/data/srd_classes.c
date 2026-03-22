@@ -17,16 +17,17 @@ static const ClassFeature BARD_FEATURES[] = {
 
 // Barde kann aus ALLEN Fertigkeiten 3 waehlen (any_skill = 1)
 
-// Option A: Lederruestung + 2 Dolche + Laute + Unterhaltungs-Gepaeck + 19 GM (D&D 2024)
+// Option A: Lederruestung + 2 Dolche + Laute + Unterhalt.-Gepaeck + 19 GM (D&D 2024)
 static const StartItem BARD_ITEMS_A[] = {
     { "Lederruestung",       1, 10.0f, 1000, ITEM_CAT_ARMOR,  1 },
     { "Dolch",               2, 1.0f,  200,  ITEM_CAT_WEAPON, 1 },
-    { "Laute",               1, 2.0f,  350,  ITEM_CAT_TOOL,   0 },
-    { "Unterhalt.-Gepaeck",  1, 0.0f,  0,    ITEM_CAT_OTHER,  0 },
+    { "Laute",               1, 2.0f,  3500, ITEM_CAT_TOOL,   0 },
+    { "Unterhalt.-Gepaeck",  1, 0.0f,  1600, ITEM_CAT_OTHER,  0 },
+    { "Startgold (19 GM)",   1, 0.0f,  1900, ITEM_CAT_OTHER,  0 },
 };
-// Option B: 90 GM (D&D 2024)
+// Option B: 75 GM (D&D 2024)
 static const StartItem BARD_ITEMS_B[] = {
-    { "Startgold (90 GM)",   1, 0.0f,  9000, ITEM_CAT_OTHER,  0 },
+    { "Startgold (75 GM)",   1, 0.0f,  7500, ITEM_CAT_OTHER,  0 },
 };
 
 // ============================================================================
@@ -446,17 +447,18 @@ const SrdClass SRD_CLASSES[] = {
         8,                      // d8
         ABILITY_CHA,
         { ABILITY_DEX, ABILITY_CHA },
-        3,                      // 3 Fertigkeiten
+        3,                      // 3 Fertigkeiten aus allen Skills
         1,                      // aus allen Skills
         NULL, 0,
         "Leichte Ruestung",
-        "Einfache Waffen",
+        "Einfache Waffen, Handarmbrust, Langschwert, Rapier, Kurzschwert",
+        "3 Musikinstrumente nach Wahl",
         BARD_FEATURES, 2,
         1, ABILITY_CHA,
         2, 4, 2,                // 2 Zaubertricks, 4 Zauber, 2 Grad-1-Plaetze
-        { "Lederruestung + 2 Dolche + Laute + Unterhalt.-Gepaeck",
-          BARD_ITEMS_A, 4 },
-        { "90 Goldmuenzen",
+        { "Lederruestung + 2 Dolche + Laute + Unterhalt.-Gepaeck + 19 GM",
+          BARD_ITEMS_A, 5 },
+        { "75 Goldmuenzen",
           BARD_ITEMS_B, 1 },
     },
     // --- KAEMPFER ------------------------------------------------------------
@@ -471,6 +473,7 @@ const SrdClass SRD_CLASSES[] = {
         FIGHTER_SKILL_OPTS, 8,
         "Alle Ruestungen, Schilde",
         "Einfache und kriegerische Waffen",
+        NULL,
         FIGHTER_FEATURES, 2,
         0, -1, 0, 0, 0,
         { "Kettenhemd + Langschwert + Schild + Rucksack",
@@ -490,6 +493,7 @@ const SrdClass SRD_CLASSES[] = {
         WIZARD_SKILL_OPTS, 6,
         "Keine",
         "Dolche, Pfeile, Wurfpfeile, Stab, Leichte Armbrust",
+        NULL,
         WIZARD_FEATURES, 2,
         1, ABILITY_INT,
         3, 6, 2,                // 3 ZT, 6 Zauberbuchzauber, 2 Grad-1-Plaetze
@@ -510,6 +514,7 @@ const SrdClass SRD_CLASSES[] = {
         ROGUE_SKILL_OPTS, 12,
         "Leichte Ruestung",
         "Einfache Waffen, Handarmbrust, Langschwert, Rapier, Kurzschwert",
+        "Diebeswerkzeug",
         ROGUE_FEATURES, 3,
         0, -1, 0, 0, 0,
         { "Rapier + Lederruestung + Diebeswerkzeug + Einbrecher-Gepaeck",
@@ -529,6 +534,7 @@ const SrdClass SRD_CLASSES[] = {
         CLERIC_SKILL_OPTS, 5,
         "Leichte und mittlere Ruestung, Schilde",
         "Einfache Waffen",
+        NULL,
         CLERIC_FEATURES, 2,
         1, ABILITY_WIS,
         3, 0, 2,                // 3 ZT, vorbereitete Zauber (nicht 'bekannt'), 2 Plaetze
@@ -549,6 +555,7 @@ const SrdClass SRD_CLASSES[] = {
         BARB_SKILL_OPTS, 6,
         "Leichte und mittlere Ruestung, Schilde (keine schwere)",
         "Einfache und kriegerische Waffen",
+        NULL,
         BARBAR_FEATURES, 2,
         0, -1, 0, 0, 0,
         { "Grossaxt + 4 Wurfmesser + Erkunder-Gepaeck",
@@ -568,6 +575,7 @@ const SrdClass SRD_CLASSES[] = {
         DRUID_SKILL_OPTS, 8,
         "Leichte und mittlere Ruestung (kein Metall), Schilde",
         "Keulen, Dolche, Wurfpfeile, Speere, Stab, Sichel, Sling, Speer",
+        "Kraeuter-Set",
         DRUID_FEATURES, 2,
         1, ABILITY_WIS,
         2, 0, 2,                // 2 ZT, vorbereitete Zauber, 2 Grad-1-Plaetze
@@ -588,6 +596,7 @@ const SrdClass SRD_CLASSES[] = {
         MONK_SKILL_OPTS, 6,
         "Keine (ungebundene Bewegung: AC = 10+DEX+WIS)",
         "Einfache Waffen, Kurzschwert",
+        NULL,
         MONK_FEATURES, 3,
         0, -1, 0, 0, 0,
         { "Kurzschwert + Dungeon-Gepaeck + 10 Wurfpfeile",
@@ -607,6 +616,7 @@ const SrdClass SRD_CLASSES[] = {
         PALADIN_SKILL_OPTS, 6,
         "Alle Ruestungen, Schilde",
         "Einfache und kriegerische Waffen",
+        NULL,
         PALADIN_FEATURES, 2,
         1, ABILITY_CHA,
         0, 0, 2,                // Kein ZT, keine bekannten Zauber, 2 Grad-1-Plaetze (ab Stufe 2 eigentlich)
@@ -627,6 +637,7 @@ const SrdClass SRD_CLASSES[] = {
         RANGER_SKILL_OPTS, 8,
         "Leichte und mittlere Ruestung, Schilde",
         "Einfache und kriegerische Waffen",
+        NULL,
         RANGER_FEATURES, 2,
         1, ABILITY_WIS,
         0, 0, 2,                // Zauber ab Stufe 2 (hier 0 bekannte Zauber bei Stufe 1)
@@ -647,6 +658,7 @@ const SrdClass SRD_CLASSES[] = {
         WARLOCK_SKILL_OPTS, 6,
         "Leichte Ruestung",
         "Einfache Waffen",
+        NULL,
         WARLOCK_FEATURES, 2,
         1, ABILITY_CHA,
         2, 2, 1,                // 2 ZT, 2 bekannte Zauber, 1 Paktplatz
@@ -667,6 +679,7 @@ const SrdClass SRD_CLASSES[] = {
         SORC_SKILL_OPTS, 6,
         "Keine",
         "Dolche, Pfeile, Wurfpfeile, Stab, Leichte Armbrust",
+        NULL,
         SORCERER_FEATURES, 2,
         1, ABILITY_CHA,
         4, 2, 2,                // 4 ZT, 2 bekannte Zauber, 2 Grad-1-Plaetze

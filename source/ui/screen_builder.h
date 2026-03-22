@@ -4,15 +4,18 @@
 #include "screen_manager.h"
 
 // ---- Builder-Schritte -------------------------------------------------------
-// Intern 8 Sub-Schritte, fuer den Nutzer sichtbar als "Schritt X/6"
+// Intern bis zu 9 Sub-Schritte; Zauberwirker haben SPELLS-Schritt,
+// Schurken haben EXPERTISE-Schritt. Nicht alle Schritte erscheinen immer.
 #define BUILDER_STEP_RACE        0
 #define BUILDER_STEP_CLASS       1
 #define BUILDER_STEP_SKILLS      2   // Teil der Klassen-Auswahl
-#define BUILDER_STEP_ABILITIES   3
-#define BUILDER_STEP_BACKGROUND  4
-#define BUILDER_STEP_DETAILS     5
-#define BUILDER_STEP_REVIEW      6
-#define BUILDER_STEP_COUNT       7
+#define BUILDER_STEP_EXPERTISE   3   // Nur fuer Schurken (Stufe 1)
+#define BUILDER_STEP_SPELLS      4   // Nur fuer Zauberwirker (Cantrips + bekannte Zauber)
+#define BUILDER_STEP_ABILITIES   5
+#define BUILDER_STEP_BACKGROUND  6
+#define BUILDER_STEP_DETAILS     7
+#define BUILDER_STEP_REVIEW      8
+#define BUILDER_STEP_COUNT       9
 
 // Methode fuer Attributswerte
 #define ABILITY_METHOD_STANDARD  0   // Standard-Array {15,14,13,12,10,8}
@@ -24,8 +27,12 @@
 #define POINTBUY_MAX            15
 
 // Anzahl der anzeigbaren Nutzer-Schritte (fuer Fortschrittsanzeige)
-// Skills ist interner Sub-Schritt von CLASS → 6 sichtbare Schritte
-#define BUILDER_VISIBLE_STEPS    6
+// Skills, Expertise und Spells sind interne Sub-Schritte → max 7 sichtbare Schritte
+#define BUILDER_VISIBLE_STEPS    7
+
+// Maximale Anzahl waehlbarer Zauber/Cantrips im Builder
+#define BUILDER_MAX_CANTRIPS     8
+#define BUILDER_MAX_SPELLS      10
 
 // ---- Builder-Status (globaler Zustand durch die Erstellung) ----------------
 typedef struct {
@@ -51,6 +58,17 @@ typedef struct {
     int abilities[ABILITY_COUNT];      // Basis-Scores (VOR Rassen-Boni)
     // Standard-Array: abilities[] ist bereits eine Permutation von {15,14,13,12,10,8}
     // Point Buy / Manual: abilities[] sind direkte Werte
+
+    // ---- Zauberauswahl (fuer Zauberwirker) ----------------------------------
+    // Speichert Indizes in BARD_CANTRIP_LIST[] bzw. BARD_SPELL_LIST[]
+    int chosen_cantrip_idx[BUILDER_MAX_CANTRIPS];
+    int chosen_cantrip_count;
+    int chosen_spell_idx[BUILDER_MAX_SPELLS];
+    int chosen_spell_count;
+
+    // ---- Expertise-Auswahl (fuer Schurken Stufe 1) -------------------------
+    int chosen_expertise[SKILL_COUNT]; // 1 = Expertise fuer diesen Skill gewaehlt
+    int expertise_count;
 
     // ---- Details ------------------------------------------------------------
     char name[CHAR_NAME_MAX];

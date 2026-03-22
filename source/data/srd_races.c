@@ -12,11 +12,11 @@ static const RacialTrait AARAKOCRA_TRAITS[] = {
     },
     {
         "Klauen",
-        "Natuerliche Waffe. Unbewaffneter Angriff: 1W4 + STR Hiebschaden."
+        "Natuerliche Waffe. Unbewaffneter Angriff: 1W6 + STR oder DEX Hiebschaden."
     },
     {
-        "Sprache: Auran",
-        "Du kennst Auran, die Sprache des Elementarplans der Luft."
+        "Windrufer",
+        "Du kannst Windstoss (Gust of Wind) 1x pro langer Rast wirken, wenn du Stufe 3+ erreichst."
     },
 };
 
@@ -350,7 +350,7 @@ const SrdRace SRD_RACES[] = {
         { 0, 2, 0, 0, 1, 0 },   // +2 DEX, +1 WIS
         25,
         "Mittel",
-        "Gemein, Aarakocra, Auran",
+        "Gemein, Aarakocra",
         "50 Fuss Flug",
         AARAKOCRA_TRAITS,
         3,

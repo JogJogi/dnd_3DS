@@ -1,5 +1,6 @@
 #include "character.h"
 #include "../utils/dnd_rules.h"
+#include <string.h>
 
 const char* SKILL_NAMES[SKILL_COUNT] = {
     "Acrobatics", "Animal Handling", "Arcana", "Athletics",
@@ -48,11 +49,22 @@ int character_proficiency_bonus(const Character* c) {
     return dnd_proficiency_bonus(c->level);
 }
 
+// Jack of All Trades: Barden ab Stufe 2 addieren halben PB auf untrainierte Checks
+static int character_has_jack_of_all_trades(const Character* c) {
+    return (strcmp(c->class_name, "Barde") == 0 && c->level >= 2);
+}
+
 int character_skill_bonus(const Character* c, int skill_idx) {
     int ability = SKILL_ABILITY[skill_idx];
     int mod     = dnd_modifier(c->ability[ability]);
     int pb      = dnd_proficiency_bonus(c->level);
-    return dnd_skill_bonus(mod, pb, c->skill_proficient[skill_idx]);
+    int prof    = c->skill_proficient[skill_idx];
+
+    if (prof == 0 && character_has_jack_of_all_trades(c)) {
+        // Halber PB (abgerundet) auf alle untrainierten Fertigkeitswuerfe
+        return mod + pb / 2;
+    }
+    return dnd_skill_bonus(mod, pb, prof);
 }
 
 int character_save_bonus(const Character* c, int ability_idx) {

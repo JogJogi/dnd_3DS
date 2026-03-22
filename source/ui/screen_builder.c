@@ -3,6 +3,7 @@
 #include "../data/srd_races.h"
 #include "../data/srd_classes.h"
 #include "../data/srd_backgrounds.h"
+#include "../data/srd_spells_bard.h"
 #include "../models/character.h"
 #include "../utils/dnd_rules.h"
 #include "../db/character_db.h"
@@ -33,6 +34,20 @@ extern void step_skills_init(void);
 extern void step_skills_draw_top(void);
 extern void step_skills_draw_bottom(void);
 extern void step_skills_update(u32 keys_down, u32 keys_held,
+                               touchPosition* touch, int touch_down);
+
+// NEU: Expertise-Schritt (nur fuer Schurken)
+extern void step_expertise_init(void);
+extern void step_expertise_draw_top(void);
+extern void step_expertise_draw_bottom(void);
+extern void step_expertise_update(u32 keys_down, u32 keys_held,
+                                  touchPosition* touch, int touch_down);
+
+// NEU: Zauber-Schritt (nur fuer Zauberwirker mit bekannten Zaubern)
+extern void step_spells_init(void);
+extern void step_spells_draw_top(void);
+extern void step_spells_draw_bottom(void);
+extern void step_spells_update(u32 keys_down, u32 keys_held,
                                touchPosition* touch, int touch_down);
 
 extern void step_abilities_init(void);
@@ -67,10 +82,14 @@ typedef struct {
     void (*update)(u32, u32, touchPosition*, int);
 } StepHandler;
 
+// Reihenfolge entspricht BUILDER_STEP_* Konstanten:
+// RACE=0, CLASS=1, SKILLS=2, EXPERTISE=3, SPELLS=4, ABILITIES=5, BACKGROUND=6, DETAILS=7, REVIEW=8
 static const StepHandler STEP_HANDLERS[BUILDER_STEP_COUNT] = {
     { step_race_init,       step_race_draw_top,       step_race_draw_bottom,       step_race_update       },
     { step_class_init,      step_class_draw_top,      step_class_draw_bottom,      step_class_update      },
     { step_skills_init,     step_skills_draw_top,     step_skills_draw_bottom,     step_skills_update     },
+    { step_expertise_init,  step_expertise_draw_top,  step_expertise_draw_bottom,  step_expertise_update  },
+    { step_spells_init,     step_spells_draw_top,     step_spells_draw_bottom,     step_spells_update     },
     { step_abilities_init,  step_abilities_draw_top,  step_abilities_draw_bottom,  step_abilities_update  },
     { step_background_init, step_background_draw_top, step_background_draw_bottom, step_background_update },
     { step_details_init,    step_details_draw_top,    step_details_draw_bottom,    step_details_update    },
@@ -150,10 +169,32 @@ Screen g_screen_builder = {
     .draw_bottom = draw_bottom,
 };
 
+// ---- Schritt-Anwendbarkeit -------------------------------------------------
+
+// Prueft ob ein Schritt fuer die aktuelle Klasse/Rasse anwendbar ist
+static int step_is_applicable(int step) {
+    if (step == BUILDER_STEP_EXPERTISE) {
+        // Nur fuer Schurken (Klassen-ID "rogue")
+        if (g_builder.class_idx < 0) return 0;
+        return strcmp(SRD_CLASSES[g_builder.class_idx].id, "rogue") == 0;
+    }
+    if (step == BUILDER_STEP_SPELLS) {
+        // Nur fuer Zauberwirker mit bekannten Zaubern (nicht fuer vorbereitete Zauberwirker)
+        if (g_builder.class_idx < 0) return 0;
+        const SrdClass* cls = &SRD_CLASSES[g_builder.class_idx];
+        // spells_known > 0: Klasse waehlt bekannte Zauber (Barde, Hexenmeister, etc.)
+        return cls->is_spellcaster && cls->spells_known > 0;
+    }
+    return 1;  // Alle anderen Schritte immer anwenden
+}
+
 // ---- Schritt-Navigation (public) -------------------------------------------
 
 void builder_next_step(void) {
     int next = g_builder.step + 1;
+    // Nicht-anwendbare Schritte ueberspringen
+    while (next < BUILDER_STEP_COUNT && !step_is_applicable(next))
+        next++;
     if (next >= BUILDER_STEP_COUNT) return;
     g_builder.step  = next;
     g_builder.dirty = 1;
@@ -161,6 +202,9 @@ void builder_next_step(void) {
 
 void builder_prev_step(void) {
     int prev = g_builder.step - 1;
+    // Nicht-anwendbare Schritte rueckwaerts ueberspringen
+    while (prev >= 0 && !step_is_applicable(prev))
+        prev--;
     if (prev < 0) {
         // Zurueck zum Hauptmenue
         screen_pop();
@@ -195,18 +239,31 @@ int builder_initial_hp(void) {
 }
 
 int builder_initial_ac(void) {
-    // Ungeruestete AC: 10 + DEX-Mod
-    // Barbar hat eigene AC-Formel, aber fuer Stufe-1-Start reicht das
-    return 10 + dnd_modifier(builder_final_ability(ABILITY_DEX));
+    int dex_mod = dnd_modifier(builder_final_ability(ABILITY_DEX));
+    // Barbar: Ungeruestete Verteidigung = 10 + DEX + CON
+    if (g_builder.class_idx >= 0 &&
+        strcmp(SRD_CLASSES[g_builder.class_idx].id, "barbarian") == 0) {
+        int con_mod = dnd_modifier(builder_final_ability(ABILITY_CON));
+        return 10 + dex_mod + con_mod;
+    }
+    // Moenche: Ungeruestete Verteidigung = 10 + DEX + WIS (wenn keine Ruestung)
+    if (g_builder.class_idx >= 0 &&
+        strcmp(SRD_CLASSES[g_builder.class_idx].id, "monk") == 0) {
+        int wis_mod = dnd_modifier(builder_final_ability(ABILITY_WIS));
+        return 10 + dex_mod + wis_mod;
+    }
+    // Standard: 10 + DEX
+    return 10 + dex_mod;
 }
 
 int builder_visible_step(void) {
-    // SKILLS ist Sub-Schritt von CLASS → anzeigen als Schritt 2
-    if (g_builder.step == BUILDER_STEP_SKILLS)
-        return 2;
-    if (g_builder.step > BUILDER_STEP_SKILLS)
-        return g_builder.step; // SKILLS nicht zaehlen → Steps 3-6 = intern 3-6
-    return g_builder.step + 1;
+    // Zaehle sichtbare (anwendbare) Schritte bis aktuellen Schritt
+    int visible = 0;
+    for (int i = 0; i <= g_builder.step && i < BUILDER_STEP_COUNT; i++) {
+        if (i == BUILDER_STEP_SKILLS) continue; // Sub-Schritt von CLASS
+        if (step_is_applicable(i)) visible++;
+    }
+    return visible > 0 ? visible : 1;
 }
 
 int builder_step_complete(int step) {
@@ -222,6 +279,14 @@ int builder_step_complete(int step) {
             for (int i = 0; i < SKILL_COUNT; i++)
                 count += g_builder.chosen_skills[i];
             return count >= cls->num_skills;
+        }
+        case BUILDER_STEP_EXPERTISE:
+            return g_builder.expertise_count >= 2;
+        case BUILDER_STEP_SPELLS: {
+            if (g_builder.class_idx < 0) return 0;
+            const SrdClass* cls = &SRD_CLASSES[g_builder.class_idx];
+            return (g_builder.chosen_cantrip_count >= cls->cantrips_known &&
+                    g_builder.chosen_spell_count   >= cls->spells_known);
         }
         case BUILDER_STEP_ABILITIES:
             return 1; // immer vollstaendig (Standardwerte sind gesetzt)
@@ -445,13 +510,19 @@ int builder_finish(void) {
     for (int i = 0; i < SKILL_COUNT; i++)
         c.skill_proficient[i] = g_builder.chosen_skills[i] ? 1 : 0;
 
-    // Hintergrunds-Skills (addieren, Doppel-Proficiency bleibt bei 1)
+    // Expertise-Skills (nur fuer Schurken Stufe 1: Proficiency 2 = Expertise)
+    for (int i = 0; i < SKILL_COUNT; i++) {
+        if (g_builder.chosen_expertise[i])
+            c.skill_proficient[i] = 2;  // 2 = Expertise
+    }
+
+    // Hintergrunds-Skills (addieren, Expertise bleibt erhalten)
     if (g_builder.bg_idx >= 0) {
         const SrdBackground* bg = &SRD_BACKGROUNDS[g_builder.bg_idx];
         for (int j = 0; j < bg->skill_prof_count; j++) {
             int idx = bg->skill_profs[j];
-            if (idx >= 0 && idx < SKILL_COUNT)
-                c.skill_proficient[idx] = 1;
+            if (idx >= 0 && idx < SKILL_COUNT && c.skill_proficient[idx] < 1)
+                c.skill_proficient[idx] = 1;  // Nur setzen wenn noch nicht proficient/expertise
         }
     }
 
@@ -501,6 +572,58 @@ int builder_finish(void) {
             slots.total[0]     = cls->spell_slots_l1;  // Grad-1-Plaetze (Index 0 = Grad 1)
             slots.used[0]      = 0;
             spell_slots_db_save(&slots);
+        }
+    }
+
+    // Gewaehlte Cantrips und Zauber als Spell-Objekte in DB speichern
+    if (g_builder.class_idx >= 0) {
+        const SrdClass* cls = &SRD_CLASSES[g_builder.class_idx];
+        if (cls->is_spellcaster && cls->spells_known > 0) {
+            // Cantrips speichern
+            for (int i = 0; i < g_builder.chosen_cantrip_count; i++) {
+                int idx = g_builder.chosen_cantrip_idx[i];
+                // Barden-Cantrips (weitere Klassen koennen hier ergaenzt werden)
+                if (strcmp(cls->id, "bard") == 0 && idx >= 0 && idx < BARD_CANTRIP_COUNT) {
+                    const BardSpellEntry* e = &BARD_CANTRIP_LIST[idx];
+                    Spell sp;
+                    memset(&sp, 0, sizeof(sp));
+                    sp.character_id  = c.id;
+                    sp.spell_level   = 0;
+                    sp.concentration = e->concentration;
+                    sp.ritual        = e->ritual;
+                    sp.prepared      = 1;  // Cantrips sind immer vorbereitet
+                    snprintf(sp.name,         sizeof(sp.name),         "%.127s", e->name);
+                    snprintf(sp.school,       sizeof(sp.school),       "%.63s",  e->school);
+                    snprintf(sp.casting_time, sizeof(sp.casting_time), "%.63s",  e->casting_time);
+                    snprintf(sp.range,        sizeof(sp.range),        "%.63s",  e->range);
+                    snprintf(sp.components,   sizeof(sp.components),   "%.63s",  e->components);
+                    snprintf(sp.duration,     sizeof(sp.duration),     "%.63s",  e->duration);
+                    snprintf(sp.description,  sizeof(sp.description),  "%.511s", e->description);
+                    spells_db_save(&sp);
+                }
+            }
+            // Bekannte Zauber speichern
+            for (int i = 0; i < g_builder.chosen_spell_count; i++) {
+                int idx = g_builder.chosen_spell_idx[i];
+                if (strcmp(cls->id, "bard") == 0 && idx >= 0 && idx < BARD_SPELL_COUNT) {
+                    const BardSpellEntry* e = &BARD_SPELL_LIST[idx];
+                    Spell sp;
+                    memset(&sp, 0, sizeof(sp));
+                    sp.character_id  = c.id;
+                    sp.spell_level   = e->level;
+                    sp.concentration = e->concentration;
+                    sp.ritual        = e->ritual;
+                    sp.prepared      = 1;
+                    snprintf(sp.name,         sizeof(sp.name),         "%.127s", e->name);
+                    snprintf(sp.school,       sizeof(sp.school),       "%.63s",  e->school);
+                    snprintf(sp.casting_time, sizeof(sp.casting_time), "%.63s",  e->casting_time);
+                    snprintf(sp.range,        sizeof(sp.range),        "%.63s",  e->range);
+                    snprintf(sp.components,   sizeof(sp.components),   "%.63s",  e->components);
+                    snprintf(sp.duration,     sizeof(sp.duration),     "%.63s",  e->duration);
+                    snprintf(sp.description,  sizeof(sp.description),  "%.511s", e->description);
+                    spells_db_save(&sp);
+                }
+            }
         }
     }
 

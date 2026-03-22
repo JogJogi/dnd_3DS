@@ -374,6 +374,11 @@ static const ProgFeat SORC_L10[] = {
 #define LA(sl)                { sl,  0,  1, NULL, 0 }  // ASI, keine neuen Features
 #define LF(sl, feats)         { sl,  0,  0, feats, (int)(sizeof(feats)/sizeof(feats[0])) }
 #define LFA(sl, feats)        { sl,  0,  1, feats, (int)(sizeof(feats)/sizeof(feats[0])) }
+// Makros mit bekannte-Zauber-Gewinn (sk = Delta-Anzahl neuer Zauber)
+#define LS(sl, sk)            { sl, sk,  0, NULL, 0 }
+#define LSA(sl, sk)           { sl, sk,  1, NULL, 0 }  // ASI + Zauber
+#define LSF(sl, sk, feats)    { sl, sk,  0, feats, (int)(sizeof(feats)/sizeof(feats[0])) }
+#define LSFA(sl, sk, feats)   { sl, sk,  1, feats, (int)(sizeof(feats)/sizeof(feats[0])) }
 
 const ClassProg SRD_CLASS_PROG[] = {
 
@@ -383,26 +388,26 @@ const ClassProg SRD_CLASS_PROG[] = {
 {
     "bard",
     {
-        L0(SLOTS_FULL[0]),                          // Stufe 1 (Erstellung)
-        LF(SLOTS_FULL[1],  BARD_L2),                // Stufe 2
-        LF(SLOTS_FULL[2],  BARD_L3),                // Stufe 3
-        LA(SLOTS_FULL[3]),                           // Stufe 4: ASI
-        LF(SLOTS_FULL[4],  BARD_L5),                // Stufe 5
-        LF(SLOTS_FULL[5],  BARD_L6),                // Stufe 6
-        L0(SLOTS_FULL[6]),                           // Stufe 7
-        LA(SLOTS_FULL[7]),                           // Stufe 8: ASI
-        LF(SLOTS_FULL[8],  BARD_L9),                // Stufe 9
-        LF(SLOTS_FULL[9],  BARD_L10),               // Stufe 10
-        L0(SLOTS_FULL[10]),                          // Stufe 11
-        LA(SLOTS_FULL[11]),                          // Stufe 12: ASI
-        LF(SLOTS_FULL[12], BARD_L13),               // Stufe 13
-        LF(SLOTS_FULL[13], BARD_L14),               // Stufe 14
-        LF(SLOTS_FULL[14], BARD_L15),               // Stufe 15
-        LA(SLOTS_FULL[15]),                          // Stufe 16: ASI
-        LF(SLOTS_FULL[16], BARD_L17),               // Stufe 17
-        LF(SLOTS_FULL[17], BARD_L18),               // Stufe 18
-        LA(SLOTS_FULL[18]),                          // Stufe 19: ASI
-        LF(SLOTS_FULL[19], BARD_L20),               // Stufe 20
+        L0(SLOTS_FULL[0]),                            // Stufe 1: 4 bekannte Zauber (in SrdClass)
+        LSF(SLOTS_FULL[1],  1, BARD_L2),             // Stufe 2: +1 Zauber (5 gesamt)
+        LSF(SLOTS_FULL[2],  1, BARD_L3),             // Stufe 3: +1 Zauber (6 gesamt), Schule+Expertise
+        LSA(SLOTS_FULL[3],  1),                       // Stufe 4: ASI, +1 Zauber (7 gesamt)
+        LSF(SLOTS_FULL[4],  1, BARD_L5),             // Stufe 5: +1 Zauber (8 gesamt)
+        LSF(SLOTS_FULL[5],  1, BARD_L6),             // Stufe 6: +1 Zauber (9 gesamt)
+        LS(SLOTS_FULL[6],   1),                       // Stufe 7: +1 Zauber (10 gesamt)
+        LSA(SLOTS_FULL[7],  1),                       // Stufe 8: ASI, +1 Zauber (11 gesamt)
+        LSF(SLOTS_FULL[8],  1, BARD_L9),             // Stufe 9: +1 Zauber (12 gesamt)
+        LSF(SLOTS_FULL[9],  2, BARD_L10),            // Stufe 10: +2 Zauber (14 gesamt, Mag. Geheimnisse)
+        LS(SLOTS_FULL[10],  1),                       // Stufe 11: +1 Zauber (15 gesamt)
+        LSA(SLOTS_FULL[11], 0),                       // Stufe 12: ASI, kein neuer Zauber
+        LSF(SLOTS_FULL[12], 1, BARD_L13),            // Stufe 13: +1 Zauber (16 gesamt)
+        LSF(SLOTS_FULL[13], 2, BARD_L14),            // Stufe 14: +2 Zauber (18, Mag. Geheimnisse)
+        LSF(SLOTS_FULL[14], 1, BARD_L15),            // Stufe 15: +1 Zauber (19 gesamt)
+        LSA(SLOTS_FULL[15], 0),                       // Stufe 16: ASI, kein neuer Zauber
+        LSF(SLOTS_FULL[16], 1, BARD_L17),            // Stufe 17: +1 Zauber (20 gesamt)
+        LSF(SLOTS_FULL[17], 2, BARD_L18),            // Stufe 18: +2 Zauber (22, Mag. Geheimnisse)
+        LSA(SLOTS_FULL[18], 0),                       // Stufe 19: ASI, kein neuer Zauber
+        LSF(SLOTS_FULL[19], 0, BARD_L20),            // Stufe 20: Ueberlegene Inspiration
     }
 },
 

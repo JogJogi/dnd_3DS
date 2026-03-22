@@ -53,6 +53,7 @@ typedef struct {
     // Rüstungs- und Waffen-Übungen
     const char* armor_profs;
     const char* weapon_profs;
+    const char* tool_profs;    // Werkzeug-Übungen (NULL = keine)
 
     // Stufe-1-Features
     const ClassFeature* features;
