@@ -1,5 +1,6 @@
 #include "srd_subclasses.h"
 #include <string.h>
+#include <stddef.h>
 
 // ============================================================================
 // BARDE – KOLLEG DES WISSENS (College of Lore)

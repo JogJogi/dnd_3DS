@@ -1,4 +1,5 @@
 #include "srd_spells_bard.h"
+#include <stddef.h>
 
 // ============================================================================
 // BARDEN-ZAUBERTRICKS (Cantrips)
